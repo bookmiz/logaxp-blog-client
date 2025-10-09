@@ -138,7 +138,7 @@ export default function BlogDetailsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <div className="flex justify-center items-center pt-32 bg-white p-4">
+      <div className="flex justify-center items-center pt-36 bg-white p-4">
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden w-full max-w-[1150px]">
           <div className="relative w-full h-60 md:h-80 lg:h-96">
             <Image
