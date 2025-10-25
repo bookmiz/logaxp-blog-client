@@ -1,8 +1,14 @@
-import React, { useState, useRef } from 'react';
-import { Save, Loader, Bold, Italic, Underline, List, ListOrdered, Link, Image, Heading1, Heading2, AlignLeft, AlignCenter, AlignRight, Type } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Save, Loader, Bold, Italic, Underline, List, ListOrdered, Link, Image, Heading1, Heading2, AlignLeft, AlignCenter, AlignRight, Type, ArrowLeft } from 'lucide-react';
 import { createBlog } from "@/services/createBlog";
+import { useEditBlog } from "@/hooks/useEditBlog";
 
-const CreateBlog = () => {
+interface CreateBlogProps {
+  editingBlog?: any;
+  onClearEditing?: () => void;
+}
+
+const CreateBlog: React.FC<CreateBlogProps> = ({ editingBlog, onClearEditing }) => {
   const [blogPost, setBlogPost] = useState({
     title: '',
     name: '',
@@ -15,6 +21,41 @@ const CreateBlog = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const editorRef = useRef<HTMLDivElement>(null);
+  const editBlog = useEditBlog();
+
+  // Populate form when editingBlog changes
+  useEffect(() => {
+    if (editingBlog) {
+      setBlogPost({
+        title: editingBlog.title || '',
+        name: editingBlog.name || '',
+        date: editingBlog.date || new Date().toISOString().split('T')[0],
+        content: editingBlog.content || '',
+        email: editingBlog.email || '',
+        app: 'myapp1'
+      });
+      
+      // Set content in editor after a small delay to ensure ref is available
+      setTimeout(() => {
+        if (editorRef.current && editingBlog.content) {
+          editorRef.current.innerHTML = editingBlog.content;
+        }
+      }, 100);
+    } else {
+      // Reset form when not editing
+      setBlogPost({
+        title: '',
+        name: '',
+        date: new Date().toISOString().split('T')[0],
+        content: '',
+        email: '',
+        app: 'myapp1'
+      });
+      if (editorRef.current) {
+        editorRef.current.innerHTML = '';
+      }
+    }
+  }, [editingBlog]);
 
   const handleInputChange = (field: string, value: string) => {
     setBlogPost(prev => ({
@@ -71,35 +112,58 @@ const CreateBlog = () => {
     setMessage('');
 
     try {
-      const apiData = {
-        title: blogPost.title,
-        content: blogPost.content,
-        name: blogPost.name,
-        email: blogPost.email,
-        app: blogPost.app
-      };
+      if (editingBlog) {
+        // Update existing blog
+        await editBlog.mutateAsync({
+          id: editingBlog._id,
+          title: blogPost.title,
+          content: blogPost.content,
+          name: blogPost.name,
+          email: blogPost.email,
+          app: blogPost.app
+        });
+        
+        setMessage('✅ Blog updated successfully!');
+        if (onClearEditing) {
+          onClearEditing();
+        }
+      } else {
+        // Create new blog
+        const apiData = {
+          title: blogPost.title,
+          content: blogPost.content,
+          name: blogPost.name,
+          email: blogPost.email,
+          app: blogPost.app
+        };
 
-      const result = await createBlog(apiData);
-      
-      setMessage(`✅ Blog created successfully!`);
-      
-      // Clear form after successful creation
-      if (editorRef.current) {
-        editorRef.current.innerHTML = '';
+        await createBlog(apiData);
+        setMessage('✅ Blog created successfully!');
+        
+        // Clear form after successful creation
+        if (editorRef.current) {
+          editorRef.current.innerHTML = '';
+        }
+        setBlogPost({
+          title: '',
+          name: '',
+          date: new Date().toISOString().split('T')[0],
+          content: '',
+          email: '',
+          app: 'myapp1'
+        });
       }
-      setBlogPost({
-        title: '',
-        name: '',
-        date: new Date().toISOString().split('T')[0],
-        content: '',
-        email: '',
-        app: 'myapp1'
-      });
     } catch (error) {
-      console.error('Error creating blog:', error);
-      setMessage('❌ Failed to create blog. Please try again.');
+      console.error('Error saving blog:', error);
+      setMessage('❌ Failed to save blog. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBackToPosts = () => {
+    if (onClearEditing) {
+      onClearEditing();
     }
   };
 
@@ -201,7 +265,20 @@ const CreateBlog = () => {
       
       <div className="bg-white rounded-xl shadow-sm border">
         <div className="p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">Create New Blog Post</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-900">
+              {editingBlog ? 'Edit Blog Post' : 'Create New Blog Post'}
+            </h2>
+            {editingBlog && (
+              <button
+                onClick={handleBackToPosts}
+                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Posts
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="p-6 space-y-8">
@@ -423,14 +500,23 @@ const CreateBlog = () => {
           </section>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-end pt-6 border-t">
+          <div className="flex items-center justify-between pt-6 border-t">
+            {editingBlog && (
+              <button
+                onClick={handleBackToPosts}
+                className="flex items-center gap-2 px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Posts
+              </button>
+            )}
             <button
               onClick={() => handleSave('Published')}
               disabled={loading}
-              className="flex items-center gap-2 px-6 py-2 bg-blue-950 text-white rounded-lg hover:bg-blue-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-6 py-2 bg-blue-950 text-white rounded-lg hover:bg-blue-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ml-auto"
             >
               {loading ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              {loading ? 'Creating Blog...' : 'Create Blog'}
+              {loading ? (editingBlog ? 'Updating Blog...' : 'Creating Blog...') : (editingBlog ? 'Update Blog' : 'Create Blog')}
             </button>
           </div>
         </div>

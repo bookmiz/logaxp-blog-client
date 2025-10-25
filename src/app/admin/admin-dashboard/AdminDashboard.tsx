@@ -3,21 +3,16 @@
 import React, { useState } from "react";
 import { Plus, Edit3, Trash2, Calendar } from "lucide-react";
 import { useAdminBlogs } from "@/hooks/useAdminBlogs";
-import { useEditBlog } from "@/hooks/useEditBlog";
 import { useDeleteBlog } from "@/hooks/useDeleteBlog";
-import EditBlogModal from "./../EditBlogModal";
 
 interface AdminDashboardProps {
   setActiveTab: (tab: string) => void;
+  onEditBlog: (blog: any) => void;
 }
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({ setActiveTab }) => {
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ setActiveTab, onEditBlog }) => {
   const { data: blogs = [], isLoading, isError } = useAdminBlogs();
-  const editBlog = useEditBlog();
   const { mutate: deleteBlog } = useDeleteBlog();
-
-  const [selectedBlog, setSelectedBlog] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Sort blogs by creation date (newest first)
   const sortedBlogs = [...blogs].sort((a, b) => 
@@ -25,22 +20,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ setActiveTab }) => {
   );
 
   const handleEdit = (post: any) => {
-    setSelectedBlog(post);
-    setIsModalOpen(true);
-  };
-
-  const handleSave = (updatedData: any) => {
-    editBlog.mutate(
-      {
-        ...updatedData,
-        app: "myapp1", // ✅ include app in body
-      },
-      {
-        onSuccess: () => {
-          setIsModalOpen(false);
-        },
-      }
-    );
+    onEditBlog(post);
   };
 
   const handleDelete = (id: string) => {
@@ -177,17 +157,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ setActiveTab }) => {
           </div>
         )}
       </div>
-
-      {/* Edit Blog Modal */}
-      {selectedBlog && (
-        <EditBlogModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          blog={selectedBlog}
-          onSave={handleSave}
-          isLoading={editBlog.isPending}
-        />
-      )}
     </div>
   );
 };

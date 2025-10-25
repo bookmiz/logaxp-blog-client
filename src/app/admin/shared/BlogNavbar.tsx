@@ -4,9 +4,19 @@ import { Edit3 } from 'lucide-react';
 interface BlogNavbarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  setEditingBlog?: (blog: any) => void;
 }
 
-const BlogNavbar: React.FC<BlogNavbarProps> = ({ activeTab, setActiveTab }) => {
+const BlogNavbar: React.FC<BlogNavbarProps> = ({ activeTab, setActiveTab, setEditingBlog }) => {
+  
+  const handleTabChange = (tab: string) => {
+    // Clear editing blog when switching tabs
+    if (setEditingBlog) {
+      setEditingBlog(null);
+    }
+    setActiveTab(tab);
+  };
+
   return (
     <header className="bg-gradient-to-r from-slate-50 to-slate-100 shadow-lg border-b border-slate-200 pt-44">
       <div className="max-w-7xl mx-auto px-6 py-6">
@@ -24,7 +34,7 @@ const BlogNavbar: React.FC<BlogNavbarProps> = ({ activeTab, setActiveTab }) => {
           </div>
           <div className="flex items-center gap-3">
             <button 
-              onClick={() => setActiveTab('posts')}
+              onClick={() => handleTabChange('posts')}
               className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
                 activeTab === 'posts' 
                   ? 'bg-blue-950 text-white shadow-lg transform scale-105' 
@@ -34,7 +44,7 @@ const BlogNavbar: React.FC<BlogNavbarProps> = ({ activeTab, setActiveTab }) => {
               All Posts
             </button>
             <button 
-              onClick={() => setActiveTab('create')}
+              onClick={() => handleTabChange('create')}
               className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
                 activeTab === 'create' 
                   ? 'bg-blue-950 text-white shadow-lg transform scale-105' 
